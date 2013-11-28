@@ -3,63 +3,132 @@
 -export([start/1]).
 
 start(N)->
-  Eles = string:tokens(N," "),
+  {ok,Data} = file:read_file(N),
+  D = re:replace(Data,"$<<","",[global,{return,list}]),
+  Eles = string:tokens(D," "),
   Ints = convert_to_ints(Eles,[]),
-  Dec_Set = longest_dec(Ints),
-  Inc_Set = longest_inc(Ints),
-  [ Dec_Set , Inc_Set ].
+  Dec_Dict_Set = longest_dec_dict(Ints),
+  Inc_Set = longest_inc_dict(Ints),
 
-longest_dec(Ll)->
-  Rets = longest_dec_rec(Ll,[]),
-  %io:format("Rets = ~w\n",[Rets]),
-  Sorted_Rets = lists:sort( fun(X,Y) ->length( X) > length( Y) end, Rets),
-  %io:format("Sorted_Rets = ~w\n",[Sorted_Rets]),
-  hd(Sorted_Rets).
+  lists:foldl( fun (A,Acc)->
+	io:format("~w ",[A]) end,[],
+    hd(lists:sort( fun(X,Y) -> length(X) > length(Y) end, Inc_Set))),
 
-longest_dec_rec(Ll,Outs)->
+  io:format("\n",[]),
+  
+  lists:foldl(fun (A, Acc)->
+	io:format("~w ",[A]) end,[],
+    hd(lists:sort( fun(X,Y) -> length(X) > length(Y) end, Dec_Dict_Set))),	
+  
+  io:format("\n",[]).
+
+longest_inc_dict(Ll)->
+  Outs = longest_inc_dict_rec(Ll,dict:new()),
+  [ element(2,Z) || Z <- dict:to_list(Outs) ].
+
+longest_inc_dict_rec(Ll,Outs)->
   if
     Ll == [] -> Outs;
     true -> 
-      New_Sets = make_new_sets_dec(Outs,hd(Ll)),
-      Pruned_Sets = prune_dec(New_Sets),
-      longest_dec_rec(tl(Ll),Pruned_Sets)
+      New_Sets = make_new_dicts_inc(Outs,hd(Ll)),
+      Pruned_Sets = prune_dicts_inc(New_Sets,Outs),
+      longest_inc_dict_rec(tl(Ll),Pruned_Sets)
   end.
 
-prune_dec(Ll)->
-  Ll.
+prune_dicts_inc(NewDict,OldDict)->
+  dict:merge( fun (Key, A ,B ) ->
+	LastA = lists:last(A),
+        LastB = lists:last(B),
+        if
+	  LastA > LastB -> B;
+	  true -> A
+	 end 
+     end,NewDict,OldDict).
 
+make_new_dicts_inc(Ll,Val)->
+  Starter = [{1,[Val]}],
+  Old = dict:to_list(Ll),
+  OldWithMore = lists:foldl( fun ( A , Acc ) ->
+	Lis = element(2,A),
+	LastLis = lists:last(Lis),
+	if
+	  LastLis < Val -> 
+	    [ { length(Lis) + 1, Lis ++ [Val] } | Acc ];
+	  true -> 
+	    [ A | Acc ] 
+	end
+    end, [], Old),
+  All = lists:merge(Starter,OldWithMore),
+  
+  lists:foldl( fun( A,Acc )->
+	ISKEY = dict:is_key(element(1,A),Acc),
+	if
+	  ISKEY == true -> 
+	    LasIn = lists:last(dict:fetch(element(1,A),Acc)),
+	    May = LasIn > lists:last(element(2,A)),
+	   if
+	      May == false ->
+		Acc;
+	      true ->
+		dict:store(element(1,A),element(2,A),Acc)
+	    end;
+	  true -> dict:store(element(1,A),element(2,A),Acc)
+	end
+    end,dict:new(),All).
 
+longest_dec_dict(Ll)->
+  Outs = longest_dec_dict_rec(Ll,dict:new()),
+  [ element(2,Z) || Z <- dict:to_list(Outs) ].
 
-longest_inc(Ll)->
-  Rets = longest_inc_rec(Ll,[]),
-  Sorted_Rets = lists:sort( fun ( X, Y ) -> length(X) > length(Y) end, Rets),
-  hd(Sorted_Rets).
-
-longest_inc_rec(Ll,Outs)->
+longest_dec_dict_rec(Ll,Outs)->
   if
     Ll == [] -> Outs;
-    true ->
-      New_Sets = make_new_sets_inc(Outs,hd(Ll)),
-      Pruned_Sets = prune_inc(New_Sets),
-      longest_inc_rec(tl(Ll),Pruned_Sets)
+    true -> 
+      New_Sets = make_new_dicts_dec(Outs,hd(Ll)),
+      Pruned_Sets = prune_dicts_dec(New_Sets,Outs),
+      longest_dec_dict_rec(tl(Ll),Pruned_Sets)
   end.
 
-prune_inc(Ll)->
-  Ll.
+prune_dicts_dec(NewDict,OldDict)->
+  dict:merge( fun (Key, A ,B ) ->
+	LastA = lists:last(A),
+        LastB = lists:last(B),
+        if
+	  LastA < LastB -> B;
+	  true -> A
+	 end 
+     end,NewDict,OldDict).
 
-make_new_sets_dec(Ll,Val)->
-  Update_Lists = [ X ++ [Val] || X <- Ll , 
-      lists:last(X) > Val ] ,
-    Update_And_Single = [[Val]|Update_Lists],
-  %io:format("UpdateLists = ~w\n",[Update_And_Single]),
-  lists:merge(Ll ,Update_And_Single).
-
-make_new_sets_inc(Ll,Val)->
-  Update_Lists = [ X ++ [Val] || X <- Ll , 
-      lists:last(X) < Val ] ,
-    Update_And_Single = [[Val]|Update_Lists],
-  %io:format("UpdateLists = ~w\n",[Update_And_Single]),
-  lists:merge(Ll ,Update_And_Single).
+make_new_dicts_dec(Ll,Val)->
+  Starter = [{1,[Val]}],
+  Old = dict:to_list(Ll),
+  OldWithMore = lists:foldl( fun ( A , Acc ) ->
+	Lis = element(2,A),
+	LastLis = lists:last(Lis),
+	if
+	  LastLis > Val -> 
+	    [ { length(Lis) + 1, Lis ++ [Val] } | Acc ];
+	  true -> 
+	    [ A | Acc ] 
+	end
+    end, [], Old),
+  All = lists:merge(Starter,OldWithMore),
+  
+  lists:foldl( fun( A,Acc )->
+	ISKEY = dict:is_key(element(1,A),Acc),
+	if
+	  ISKEY == true -> 
+	    LasIn = lists:last(dict:fetch(element(1,A),Acc)),
+	    May = LasIn < lists:last(element(2,A)),
+	   if
+	      May == false ->
+		Acc;
+	      true ->
+		dict:store(element(1,A),element(2,A),Acc)
+	    end;
+	  true -> dict:store(element(1,A),element(2,A),Acc)
+	end
+    end,dict:new(),All).
 
 convert_to_ints(Ll,Outs)->
   if
