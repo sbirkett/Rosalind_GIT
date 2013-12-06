@@ -1,6 +1,10 @@
 -module(node_stuff).
 
--export([regular_node_head/1,regular_node/2,read_until_head/1]).
+-export(
+   [regular_node_head/1,
+	regular_node/2,
+	read_until_head/1,
+	make_leafs/2]).
 
 -include_lib("nodes.hrl").
 
@@ -19,3 +23,7 @@ read_until_head_rec(Node,Vals)->
     true ->
       read_until_head_rec(Node#node.parent,Vals ++ [Node#node.value])
   end.
+
+make_leafs(NewVals,Parent)->
+	lists:foldl( fun(A,Acc) ->
+		Acc ++ [ regular_node(Parent,A) ] end,[],NewVals).
