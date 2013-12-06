@@ -9,7 +9,8 @@
     fetch_web/1,
     fetch_uniprot/1,
     get_protein_weight/1,
-    get_mrna_prot_lookup/0
+    get_mrna_prot_lookup/0,
+	index_of/2
   ]).
 
 -define(UniProtPrefix, "http://www.uniprot.org/uniprot/").
@@ -108,6 +109,13 @@
 { "AGG" , "R" },  
 { "GGG" , "G" }  
 ])).
+
+index_of(Item, List) -> index_of(Item, List, 1).
+
+index_of(_, [], _)  -> not_found;
+index_of(Item, [Item|_], Index) -> Index;
+index_of(Item, [_|Tl], Index) -> index_of(Item, Tl, Index+1).
+
 
 get_mrna_prot_lookup()->
   ?MrnaProtLookup.
