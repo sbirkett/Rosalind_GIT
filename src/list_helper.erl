@@ -3,10 +3,16 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([swap_elements/3]).
+-export([swap_elements/3,reverse_subsequence/3]).
 
 swap_elements(List,X,Y)->
   swap_elements_rec(List,X,Y,[],1).
+
+reverse_subsequence(List,X,Y)->
+  First = lists:sublist(List,X-1),
+  {Garb,Last} = lists:split(Y,List),
+  {OtherBag,SubSec} = lists:split(X-1,Garb),
+  First ++ lists:reverse(SubSec) ++ Last.
 
 %% ====================================================================
 %% Internal functions
