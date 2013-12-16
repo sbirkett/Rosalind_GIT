@@ -1,0 +1,1 @@
+-record(worker,{func,input}).
