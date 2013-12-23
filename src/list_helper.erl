@@ -7,6 +7,11 @@
 
 remove_longest_duplication(A,B)->
   if
+    is_list(A) == false -> 
+      io:format("A NOT A LIST !!! \n",[]),
+      io:format("A = ~w\n",[A]),
+      io:format("B = ~w\n",[B]),
+      777777777;
     length(A) > length(B) -> remove_longest_duplication_rec(A,B,length(B));
     true -> 
       Overlap = remove_longest_duplication_rec(A,B,length(A)),
