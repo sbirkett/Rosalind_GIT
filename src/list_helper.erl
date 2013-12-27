@@ -11,16 +11,19 @@ remove_longest_duplication(A,B)->
       io:format("A NOT A LIST !!! \n",[]),
       io:format("A = ~w\n",[A]),
       io:format("B = ~w\n",[B]),
-      777777777;
+      error(badarg);
     is_list(B) == false ->
       io:format("B NOT A LIST !!!\n",[]),
       io:format("A = ~w\n",[A]),
       io:format("B = ~w\n",[B]),
-      777777777;
-    length(A) > length(B) -> remove_longest_duplication_rec(A,B,length(B));
+      error(badarg);
+    length(A) > length(B) -> 
+      Overlap = remove_longest_duplication_rec(A,B,length(B)),
+      {Overlap,lists:sublist(A,length(A)-Overlap) ++ B};
     true -> 
       Overlap = remove_longest_duplication_rec(A,B,length(A)),
-      lists:sublist(A,length(A)-Overlap) ++ B
+      %io:format("Length A = ~w\n",[length(A)]),
+      {Overlap,lists:sublist(A,length(A)-Overlap) ++ B}
   end.
 
 swap_elements(List,X,Y)->
