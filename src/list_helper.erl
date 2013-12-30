@@ -18,12 +18,23 @@ remove_longest_duplication(A,B)->
       io:format("B = ~w\n",[B]),
       error(badarg);
     length(A) > length(B) -> 
-      Overlap = remove_longest_duplication_rec(A,B,length(B)),
-      {Overlap,lists:sublist(A,length(A)-Overlap) ++ B};
-    true -> 
-      Overlap = remove_longest_duplication_rec(A,B,length(A)),
-      %io:format("Length A = ~w\n",[length(A)]),
-      {Overlap,lists:sublist(A,length(A)-Overlap) ++ B}
+      Pos = string:str(A,B),
+      if
+	Pos == 0 ->
+      	    Overlap = remove_longest_duplication_rec(A,B,length(B)),
+            {Overlap,lists:sublist(A,length(A)-Overlap) ++ B};
+	  true ->
+	    {length(B),A}
+       end;
+    true ->
+      Pos = string:str(B,A),
+      if
+	Pos == 0 ->
+      	    Overlap = remove_longest_duplication_rec(A,B,length(A)),
+            {Overlap,lists:sublist(A,length(A)-Overlap) ++ B};
+	true -> 
+	  {length(B),A}
+      end
   end.
 
 swap_elements(List,X,Y)->
