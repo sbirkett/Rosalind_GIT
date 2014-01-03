@@ -3,7 +3,24 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([remove_longest_duplication/2,swap_elements/3,reverse_subsequence/3]).
+-export(
+   [remove_longest_duplication/2,
+	swap_elements/3,
+	reverse_subsequence/3,
+	identify_overlap_with_minimum/3]
+	   ).
+
+identify_overlap_with_minimum(A,B,Min)->
+	if
+		is_list(A) == false ->
+			error(badarg);
+		is_list(B) == false ->
+			error(badarg);
+		length(A) > length(B) ->
+			remove_longest_duplication_rec_with_min(A,B,Min,length(B));
+		true ->
+			remove_longest_duplication_rec_with_min(A,B,Min,length(A))
+	end.
 
 remove_longest_duplication(A,B)->
   if
@@ -49,6 +66,23 @@ reverse_subsequence(List,X,Y)->
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
+
+remove_longest_duplication_rec_with_min(A,B,Min,FrameSize)->
+	
+   if 
+	   Min > FrameSize -> 0;
+	   true ->
+	
+           First = lists:nthtail(length(A)-FrameSize,A),
+           Second = lists:sublist(B,FrameSize),
+           Dup = confirm_duplication(First++Second),
+
+           if
+               Dup -> FrameSize;
+               FrameSize == 0 -> 0;
+               true -> remove_longest_duplication_rec_with_min(A,B,Min,FrameSize-1)
+           end
+  end.
 
 %Performed Greedy
 remove_longest_duplication_rec(A,B,FrameSize)->

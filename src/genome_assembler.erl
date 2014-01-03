@@ -3,6 +3,7 @@
 -export([assemble/1,worker/0]).
 
 -include_lib("../rosalind_records.hrl").
+-include_lib("nodes.hrl").
 
 -import(list_helper,[remove_longest_duplication/2]).
 -import(fasta_reader,[read/1]).
@@ -17,9 +18,22 @@ assemble(N)->
 process_all(N,Logger)->
   process_all_rec(N,Logger).
 
-find_all_best_left_right()->
+build_final_string(Graph)->
 	1.
 
+find_all_best_left_right(Seqs)->
+	find_all_best_left_right_rec(Seqs,[],1).
+
+find_all_best_left_right_rec(Seqs,Placed,Index)->
+	if
+		length(Placed) == length(Seqs) -> Placed;
+		true ->
+			find_all_best_left_right_rec(Seqs,[construct_placement(Seqs,Index),Placed],Index+1)
+	end.
+
+construct_placement(Seqs,Index)->
+	1.
+			
 process_all_rec(Input,Logger)->
   %io:format("process_all_rec\n",[]),
   %io:format("Input = ~w\n",[Input]),
