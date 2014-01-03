@@ -17,6 +17,9 @@ assemble(N)->
 process_all(N,Logger)->
   process_all_rec(N,Logger).
 
+find_all_best_left_right()->
+	1.
+
 process_all_rec(Input,Logger)->
   %io:format("process_all_rec\n",[]),
   %io:format("Input = ~w\n",[Input]),
