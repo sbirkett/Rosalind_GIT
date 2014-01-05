@@ -10,7 +10,8 @@
     fetch_uniprot/1,
     get_protein_weight/1,
     get_mrna_prot_lookup/0,
-	index_of/2
+    index_of/2,
+    hamming_distance/2
   ]).
 
 -define(UniProtPrefix, "http://www.uniprot.org/uniprot/").
@@ -116,6 +117,18 @@ index_of(_, [], _)  -> not_found;
 index_of(Item, [Item|_], Index) -> Index;
 index_of(Item, [_|Tl], Index) -> index_of(Item, Tl, Index+1).
 
+hamming_distance(A,B)->
+  hamming_distance_rec(A,B,0).
+
+hamming_distance_rec([],[],Dist)->
+  Dist;
+hamming_distance_rec(A,B,Dist)->
+  case hd(A) == hd(B) of
+    true ->
+      hamming_distance_rec(tl(A),tl(B),Dist);
+    false ->
+      hamming_distance_rec(tl(A),tl(B),Dist+1)
+  end.
 
 get_mrna_prot_lookup()->
   ?MrnaProtLookup.
