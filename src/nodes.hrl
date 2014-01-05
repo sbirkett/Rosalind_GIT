@@ -2,4 +2,4 @@
 
 -record(smartNode,{parent,children,value}).
 
--record(genomeSection,{sequenceIdent,sequence,left,right}).
+-record(genomeSection,{sequenceIdent,sequence,overlap,right}).

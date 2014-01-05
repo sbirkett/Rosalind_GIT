@@ -1,6 +1,6 @@
 -module(genome_assembler).
 
--export([assemble/1,worker/0]).
+-export([assemble/1,multi_do_right_placement/4]).
 
 -include_lib("../rosalind_records.hrl").
 -include_lib("nodes.hrl").
@@ -11,130 +11,105 @@
 assemble(N)->
   compile:file("../fasta_reader.erl"),
   compile:file("list_helper.erl"),
-  Fastas = [ T#fasta.sequence || T <- fasta_reader:read(N)],
+  Fastas = fasta_reader:read(N),
   {ok,Logger} =file:open("output.txt",[write]),
-  process_all(Fastas,Logger).
+  Nodes = construct_nodes(Fastas,[]),
+  MakeRet = multi_find_all_best_right_rec(Nodes,1),
+  Placed_T = return_listener([],length(Fastas)),
+  Placed = lists:sort(fun(A,B) -> A#genomeSection.overlap < B#genomeSection.overlap end,
+    Placed_T),
+  First = hd(Placed),
+  {In,Out} = lists:partition( fun(A) ->
+	NextSection = A#genomeSection.right,
+	NextSection#genomeSection.sequenceIdent == First#genomeSection.sequenceIdent end, 
+  	tl(Placed)),
+  Return = 
+    build_final_string(
+      In,
+      Out,
+      First#genomeSection.sequence),
+  Return.
 
-process_all(N,Logger)->
-  process_all_rec(N,Logger).
-
-build_final_string(Graph)->
-	1.
-
-find_all_best_left_right(Seqs)->
-	find_all_best_left_right_rec(Seqs,[],1).
-
-find_all_best_left_right_rec(Seqs,Placed,Index)->
-	if
-		length(Placed) == length(Seqs) -> Placed;
-		true ->
-			find_all_best_left_right_rec(Seqs,[construct_placement(Seqs,Index),Placed],Index+1)
-	end.
-
-construct_placement(Seqs,Index)->
-	1.
-			
-process_all_rec(Input,Logger)->
-  %io:format("process_all_rec\n",[]),
-  %io:format("Input = ~w\n",[Input]),
-  %file:write(Logger,"process_all_rec\n"),
-  %file:write(Logger,"input length = "),
-  %io:write(Logger,length(Input)),
-  io:format("Remaning = ~w\n",[length(Input)]),
-  %file:write(Logger,"\n"),
-  %file:write(Logger,Input),
-  if
-    length(Input) == 1 -> Input;
-    true ->
-      Rets = find_best_match(hd(Input),tl(Input),Logger,[]),
-      if 
-	length(Rets) == length(Input) ->
-	  file:write(Logger,"Something terrible happened\n"),
-	  %io:write(Logger,Input),
-	  %io:write(Logger,Rets),
-	  [];
-	true->
-      		%file:write(Logger,Rets),
-      		process_all_rec(Rets,Logger)
-      end
-      %Rets = perform_iteration(Input),
-      %io:format("Rets = ~w\n",[Rets]),
-      %process_all_rec(Rets)
-  end.
-
-find_best_match(Val,Others,Logger,CarryOver)->
-  % make first choice
-  %io:format("find_best_match\n",[]),
-  %io:format("Val = ~w\n",[Val]),
-  %io:format("Others = ~w\n",[Others]),
-  Rets = rec_find_match(Val,Others,Val ++ hd(Others),hd(Others),0),
-  Overlap = hd(tl(Rets)),
-  %io:format("Overlap = ~w\n",[Overlap]),
-  %io:format("Required = ~w\n",[round(length(Val)/2)]),
-  if
-    ( round ( length(Val) / 2 ) > Overlap ) ->
-      %io:format("Overlap too short\n",[]),
-
-      find_best_match(hd(Others),tl(Others),Logger,CarryOver ++ [Val]);
-    true ->
-      lists:merge(lists:delete(lists:last(Rets),Others) ++ [hd(Rets)],CarryOver)
-  end.
-
-rec_find_match(_,[],Best,BestVal,BestOverlap)->
-  [Best,BestOverlap,BestVal];
-rec_find_match(Val,Others,Best,BestVal,BestOverlap)->
-  %io:format("rec_find_match\n",[]),
-  %io:format("BestOverlap = ~w\n",[BestOverlap]),
-  %io:format("Val = ~w\n",[Val]),
-  %io:format("Others = ~w\n",[Others]),
-  Ret = multi_do_match(Val,hd(Others)),
-  %io:format("Ret = ~w\n",[Ret]),
-  %io:format("Length hd of Ret = ~w\n",[length(hd(Ret))]),
-  %io:format("Letnght of best = ~w\n",[length(Best)]),
-  Overlap = hd(tl(Ret)),
-  %io:format("in rec-F_m Overlap = ~w\n",[Overlap]),
-  if 
-    Ret == [] -> 
-      io:format("Ret was empty list !!!\n",[]),
-      rec_find_match(Val,tl(Others),Best,BestVal,BestOverlap);
-%    ( ( hd(hd(Ret)) > round ( length(Val) * 0.5 ) ) or
-%      ( hd(hd(Ret)) > round ( length(hd(Others)) * 0.5 ))) ->
-%      io:format("Found short\n",[]),
-%	[hd(Ret),lists:last(Ret)];
-    %length(hd(Ret)) < length(Best) ->
-    Overlap > BestOverlap ->
-      rec_find_match(Val,tl(Others),hd(Ret),lists:last(Ret),hd(tl(Ret)));
-    true -> 
-      rec_find_match(Val,tl(Others),Best,BestVal,BestOverlap)
-  end.
-
-multi_do_match(Val,Other)->
-  Pid = spawn(genome_assembler,worker,[]),
-  Pid ! {Other,Val,self()},
-  {Overlap,FB} = list_helper:remove_longest_duplication(Val,Other),
-  %io:format("Overlap = ~w\n",[Overlap]),
-  %io:format("FB = ~w\n",[FB]),
+return_listener(Nodes,Total)->
   receive
-    {SOverlap,BF}->
-      %io:format("SOverlap = ~w\n",[SOverlap]),
-      %io:format("Overlap = ~w\n",[Overlap]),
-      %io:format("BF = ~w\n",[BF]),
-      if
-	Overlap > SOverlap ->
-	  [FB,Overlap,Other];
-	Overlap == SOverlap ->
-	  %io:format("Equality found !!!\n",[]),
-	  [FB,Overlap,Other];
+    {Node}->
+      case (length(Nodes) + 1) == Total of
 	true ->
-	  [BF,SOverlap,Other]
+	  [Node|Nodes];
+	false ->
+	  return_listener([Node|Nodes],Total)
       end
   end.
 
-worker()->
-  receive
-    %{Val,Other,Sender_PID}->
-    {Val,Other,Sender_PID} ->
-      %io:format("Val = ~w\n",[Val]),
-      %io:format("Other = ~w\n",[Other]),
-      Sender_PID ! list_helper:remove_longest_duplication(Val,Other)
+construct_nodes([],Return)->
+  Return;
+construct_nodes(Fastas,Return)->
+  Fasta = hd(Fastas),
+  construct_nodes(tl(Fastas),[
+    #genomeSection{
+      sequenceIdent = Fasta#fasta.ident,
+      sequence = Fasta#fasta.sequence,
+      overlap = 0
+    }|Return]).
+
+build_final_string(Val,[],Return)->
+  ValVal = hd(Val),
+  lists:append(
+    lists:sublist(
+      ValVal#genomeSection.sequence,
+      (length(ValVal#genomeSection.sequence) - ValVal#genomeSection.overlap))
+      ,Return);
+build_final_string(Val,Graph,Return)->
+  ValVal = hd(Val),
+  ModifiedReturn = 
+    lists:append(
+      lists:sublist(
+	ValVal#genomeSection.sequence,
+	(length(ValVal#genomeSection.sequence) - ValVal#genomeSection.overlap))
+      ,Return),
+  {In,Out} = 
+    lists:partition( fun(A) ->
+	  NextSection = A#genomeSection.right,
+	  NextSection#genomeSection.sequenceIdent == ValVal#genomeSection.sequenceIdent end,
+          Graph),
+  build_final_string(In,Out,ModifiedReturn).
+
+multi_find_all_best_right_rec(Seqs,Index)->
+  case Index == (length(Seqs)+1) of
+    false ->
+      spawn(
+	genome_assembler,
+	multi_do_right_placement,
+	[lists:nth(Index,Seqs),lists:delete(lists:nth(Index,Seqs),Seqs),lists:nth(Index,Seqs),self()]),
+      multi_find_all_best_right_rec(Seqs,Index+1);
+    true->
+      1
+  end.
+
+multi_do_right_placement(Seq,[],Best,Rec_PID)->
+  Rec_PID ! {Best};
+multi_do_right_placement(Seq,Seqs,Best,Rec_PID)->
+  CompareTo = hd(Seqs),
+  PossibleNew = 
+    list_helper:identify_overlap_with_minimum(
+      Seq#genomeSection.sequence,
+      CompareTo#genomeSection.sequence,
+      0),
+  case PossibleNew > Best#genomeSection.overlap of
+    true ->
+      multi_do_right_placement(
+	Seq,
+	tl(Seqs),
+	#genomeSection{
+	  sequenceIdent = Seq#genomeSection.sequenceIdent,
+	  sequence = Seq#genomeSection.sequence,
+	  overlap = PossibleNew,
+	  right = CompareTo},
+      Rec_PID);
+    false ->
+      multi_do_right_placement(
+	Seq,
+	tl(Seqs),
+	Best,
+        Rec_PID)
   end.
