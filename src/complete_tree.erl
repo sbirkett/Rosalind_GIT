@@ -1,7 +1,5 @@
 -module(complete_tree).
 
--include_lib("nodes.hrl").
-
 -export([start/1]).
 
 start(File)->
@@ -10,32 +8,16 @@ start(File)->
   T = string:tokens(D,"\n"),
   {GraphCount,Others} = string:to_integer(hd(T)),
 
-  Nodes = [ #graphNode{ident=T,adjacents=[]} || T <- lists:seq(1,GraphCount) ],
+  Edges = get_edges(tl(T),[]),
 
-  ConnectedNodes = make_connections(Nodes,tl(T)),
-  io:format("~w\n",[ConnectedNodes]).
+  UEdges = lists:usort([ lists:sort(Y) || Y <- Edges ] ),
 
-clump_crawler(Previous,Current,[])->
-  length(Previous) -1;
-clump_crawler(Previous,Current,Rem)->
-  1.
+  GraphCount - 1 - length(Edges).
 
-make_connections(Nodes,[])->
-  Nodes;
-make_connections(Nodes,List)->
-  Toks = string:tokens(hd(List)," "),
+get_edges([],Outs)->
+  Outs;
+get_edges(Lines,Outs)->
+  Toks = string:tokens(hd(Lines)," "),
   {From,Oth} = string:to_integer(re:replace(hd(Toks), "(^\\s+)|(\\s+$)", "", [global,{return,list}])),
   {To,O} = string:to_integer(re:replace(lists:last(Toks), "(^\\s+)|(\\s+$)", "", [global,{return,list}])),
-  FromNode = hd(lists:filter( fun(A) -> 
-	  A#graphNode.ident == From end, Nodes)),
-  ToNode = hd(lists:filter( fun(A) ->
-	  A#graphNode.ident == To end, Nodes)),
-  NewFromNode = #graphNode{
-    ident=FromNode#graphNode.ident,
-    adjacents=[To|FromNode#graphNode.adjacents]},
-  NewToNode = #graphNode{
-    ident=ToNode#graphNode.ident,
-    adjacents=[From|ToNode#graphNode.adjacents]},
-  LessFromNode = [NewFromNode|lists:delete(FromNode,Nodes)],
-  make_connections([NewToNode|lists:delete(ToNode,LessFromNode)],tl(List)).
-
+  get_edges(tl(Lines),[[From,To]|Outs]).
