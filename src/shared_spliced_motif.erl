@@ -16,20 +16,39 @@ start(File)->
 iterate([],Answers)->
   Answers;
 iterate(ProblemSets,Answers)->
-  {Problem,Answer} = advance_problem(hd(ProblemSets)),
+  FilteredProblems = filter_problems(ProblemSets),
+  {Problem,Answer} = advance_problem(hd(FilteredProblems)),
   case Answer == [] of
     true ->
-      iterate(lists:merge(tl(ProblemSets),Problem),Answers);
+      iterate(lists:merge(tl(FilteredProblems),Problem),Answers);
     false ->
-      iterate(tl(ProblemSets),Answers ++ [Answer])
+      iterate(tl(FilteredProblems),Answers ++ [Answer])
   end.
 
 advance_problem(ProblemSet)->
-  {1,[]}.
+  IsComplete = is_complete(ProblemSet),
+  case IsComplete of 
+    true ->
+      {[],ProblemSet#problemSet.seq};
+    false ->
+      % Do stuff
+      {1,[]}
+  end.
 
 % Advance frame until matching chars found
 % Determine number of matching chars
 % Make new problem(s) from the advanced frame
 
 is_complete(ProblemSet)->
-  1.
+  MatchingChars =
+    list:filter( fun(A) ->
+	  list:member(A,ProblemSet#problemSet.second) end,ProblemSet#problemSet.first),
+  length(MatchingChars) == 0.
+
+filter_problems(ProblemSets)->
+  Longest = hd(lists:sort(fun(A,B) -> 
+	  length(A#problemSet.seq) > length(B#problemSet.seq) end, ProblemSets)),
+  lists:filter( fun(A) ->
+	(length(A#problemSet.first) > Longest) and
+	(length(A#problemSet.second) > Longest) end, ProblemSets).
+
