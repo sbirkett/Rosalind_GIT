@@ -40,20 +40,40 @@ get_minimal_frame_and_intersection(A,B,FrameSize)->
       {FrameSize,AIntB}
   end.
 
+decide_better_problemset(A,B)->
+  {AFrameSize,AInt} = get_minimal_frame_and_intersection(A#problemSet.first,A#problemSet.second,1),
+  {BFrameSize,BInt} = get_minimal_frame_and_intersection(B#problemSet.first,B#problemSet.second,1),
+  case (AFrameSize < BFrameSize) of
+    true ->
+      A;
+    false ->
+      B
+  end.
+
 iterate([],Answers)->
   Answers;
 iterate(ProblemSets,Answers)->
   %io:format("iterate\n",[]),
   %io:format("ProblemSets = ~w\n",[ProblemSets]),
   %io:format("Answers = ~w\n",[Answers]),
-  FilteredProblems = filter_problems(ProblemSets),
+  %FilteredProblems = filter_problems(ProblemSets),
   %io:format("FilteredProblems = ~w\n",[FilteredProblems]),
-  {Problem,Answer} = advance_problem(hd(FilteredProblems)),
+  %{Problem,Answer} = advance_problem(hd(FilteredProblems)),
+  {Problem,Answer} = advance_problem(hd(ProblemSets)),
   case Answer == [] of
     true ->
-      iterate(lists:merge(tl(FilteredProblems),Problem),Answers);
+      case ( (length(Problem) > 1) == true) of
+	true ->
+	  Better_Problem = decide_better_problemset(hd(Problem),lists:last(Problem)),
+	  %iterate(tl(FilteredProblems) ++ [Better_Problem],Answers);
+	  iterate([Better_Problem],Answers);
+	false ->
+	  iterate(Problem,Answers)
+	  %iterate(tl(FilteredProblems) ++ Problem,Answers)
+      end;
     false ->
-      iterate(tl(FilteredProblems),Answers ++ [Answer])
+      Answers ++ [Answer]
+      %iterate(tl(FilteredProblems),Answers ++ [Answer])
   end.
 
 advance_problem(ProblemSet)->
