@@ -1,7 +1,6 @@
 -module(independent_alleles).
 
 -record(geno,{a,b,c,d}).
--record(genoNode,{parent,genotype,stat}).
 
 -define(DefaultGeno,#geno{a=1,b=0,c=1,d=0}).
 
@@ -23,7 +22,7 @@ solve(K,N) ->
 
   C = factorial(TotalOffspring) / ( factorial(N) * factorial(TotalOffspring-N)),
 
-  C * math:pow(ProbForOne,N) * math:pow(1-ProbForOne,TotalOffspring-N).
+  C * math:pow(ProbForOne,N). %* math:pow(1-ProbForOne,TotalOffspring-N).
 
 factorial(0) -> 1;
 factorial(N) -> N * factorial(N-1).
@@ -36,15 +35,40 @@ make_generations(Count,LastGen)->
   make_generations(Count-1,NewGen).
 
 breed(A,B)->
-  Geno0 = #geno{a=A#geno.a,b=B#geno.a,c=A#geno.c,d=B#geno.c},
-  Geno1 = #geno{a=A#geno.a,b=B#geno.a,c=A#geno.c,d=B#geno.d},
-  Geno2 = #geno{a=A#geno.a,b=B#geno.a,c=A#geno.d,d=B#geno.d}, 
-  Geno3 = #geno{a=A#geno.a,b=B#geno.b,c=A#geno.c,d=B#geno.c}, 
-  Geno4 = #geno{a=A#geno.b,b=B#geno.b,c=A#geno.c,d=B#geno.c}, 
-  Geno5 = #geno{a=A#geno.a,b=B#geno.b,c=A#geno.c,d=B#geno.d}, 
-  Geno6 = #geno{a=A#geno.b,b=B#geno.b,c=A#geno.c,d=B#geno.d}, 
-  Geno7 = #geno{a=A#geno.b,b=B#geno.b,c=A#geno.d,d=B#geno.d}, 
-  [Geno0,Geno1,Geno2,Geno3,Geno4,Geno5,Geno6,Geno7].
+
+  % 0000
+  Geno0 = #geno{ a=A#geno.a, b=B#geno.a, c=A#geno.c, d=B#geno.c },
+  % 0001
+  Geno1 = #geno{ a=A#geno.a, b=B#geno.a, c=A#geno.c, d=B#geno.d },
+  % 0011
+  Geno2 = #geno{ a=A#geno.a, b=B#geno.a, c=A#geno.d, d=B#geno.d }, 
+  % 0100
+  Geno3 = #geno{ a=A#geno.a, b=B#geno.b, c=A#geno.c, d=B#geno.c }, 
+  % 1100
+  Geno4 = #geno{ a=A#geno.b, b=B#geno.b, c=A#geno.c, d=B#geno.c }, 
+  % 0101
+  Geno5 = #geno{ a=A#geno.a, b=B#geno.b, c=A#geno.c, d=B#geno.d }, 
+  % 1101
+  Geno6 = #geno{ a=A#geno.b, b=B#geno.b, c=A#geno.c, d=B#geno.d }, 
+  % 1111
+  Geno7 = #geno{ a=A#geno.b, b=B#geno.b, c=A#geno.d, d=B#geno.d },
+  % 1010
+  Geno8 = #geno{ a=A#geno.b, b=B#geno.a, c=A#geno.d, d=B#geno.c },
+  % 1011
+  Geno9 = #geno{ a=A#geno.b, b=B#geno.a, c=A#geno.d, d=B#geno.d },
+  % 1000
+  Geno10= #geno{ a=A#geno.b, b=B#geno.a, c=A#geno.c, d=B#geno.c },
+  % 0110
+  Geno11= #geno{ a=A#geno.a, b=B#geno.b, c=A#geno.d, d=B#geno.c },
+  % 0010
+  Geno12= #geno{ a=A#geno.a, b=B#geno.a, c=A#geno.d, d=B#geno.c },
+  % 0111
+  Geno13= #geno{ a=A#geno.a, b=B#geno.b, c=A#geno.d, d=B#geno.d },
+  % 1001
+  Geno14= #geno{ a=A#geno.b, b=B#geno.a, c=A#geno.c, d=B#geno.d },
+  % 1110
+  Geno15= #geno{ a=A#geno.b, b=B#geno.b, c=A#geno.d, d=B#geno.c },
+  [Geno0,Geno1,Geno2,Geno3,Geno4,Geno5,Geno6,Geno7,Geno8,Geno9,Geno10,Geno11,Geno12,Geno13,Geno14,Geno15].
 
 like_defaultGeno([],Out)-> Out;
 like_defaultGeno(Genos,Out)->
