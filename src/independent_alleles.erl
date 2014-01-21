@@ -7,11 +7,36 @@
 -export([solve/2,factorial/1]).
 
 solve(K,N) ->
-  LastGen = make_generations(K,[?DefaultGeno]),
-  LikeGeno = length(like_defaultGeno(LastGen,[])),
 
-  TotalOffspring = round(math:pow(2,K)),
-  ProbForOne = (LikeGeno/length(LastGen)),
+  TotalProgeny = round(math:pow(2,K)),
+  
+  Min = TotalProgeny - N + 1,
+  1 - do_binomial(TotalProgeny,Min,3/4).
+
+  %binomial_rec(TotalProgeny,N,3/4,0).
+  %do_binomial(K,N,3/4).
+
+binomial_rec(K,N,P,Out)->
+  Val = do_binomial(K,N,P),
+  io:format("Val = ~w\n",[Val]),
+  case K == N of
+    true ->
+      Out + Val;
+    false ->
+      binomial_rec(K,N+1,P,Out+Val)
+  end.
+
+
+do_binomial(K,N,P)->
+
+  ( factorial ( K ) / ( factorial(N) * factorial(K-N) ) ) *
+  math:pow( P, N) * math:pow(1-P,K-N).
+
+  %LastGen = make_generations(K,[?DefaultGeno]),
+  %LikeGeno = length(like_defaultGeno(LastGen,[])),
+
+  %TotalOffspring = round(math:pow(2,K)),
+  %ProbForOne = (LikeGeno/length(LastGen)),
 
   % n = TotalOffspring
   % r = N
@@ -20,9 +45,9 @@ solve(K,N) ->
 
   % Answer = C(n,r) * p^r * (1-p)^(n-r)
 
-  C = factorial(TotalOffspring) / ( factorial(N) * factorial(TotalOffspring-N)),
+  %C = factorial(TotalOffspring) / ( factorial(N) * factorial(TotalOffspring-N)),
 
-  C * math:pow(ProbForOne,N). %* math:pow(1-ProbForOne,TotalOffspring-N).
+  %C * math:pow(ProbForOne,N). %* math:pow(1-ProbForOne,TotalOffspring-N).
 
 factorial(0) -> 1;
 factorial(N) -> N * factorial(N-1).
