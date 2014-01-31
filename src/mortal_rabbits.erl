@@ -1,6 +1,3 @@
-%% @author birketsc
-%% @doc @todo Add description to mortal_rabbits.
-
 -module(mortal_rabbits).
 
 %% ====================================================================
@@ -9,33 +6,39 @@
 -export([solve/2]).
 
 solve(N,K)->
-  rec_iterate(N-1,K,[K-1]).
+  rec_iterate3(N,[{K,1}],K).
 
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
 
-rec_iterate(Months,TTL,Rabbits)->
-  io:format("rec_iterator\n",[]),
-  io:format("Months = ~w\n",[Months]),
-  io:format("TTL = ~w\n",[TTL]),
-  io:format("Rabbits = ~w\n",[Rabbits]),
-  % Age
-  AgedRabbits = [ A - 1 || A <- Rabbits ],
-  io:format("AgedRabbits = ~w\n",[AgedRabbits]),
-  % Filter and Breed
-  SurvivingRabbits =
-    lists:foldl( fun ( A, Acc) ->
-	  %case A of
+rec_iterate3(1,Rabbits,_)->
+	lists:foldl( fun( A, Acc) ->
+	  { Key, Vals } = A,
+	  Acc + Vals
+	end,0,Rabbits);
+rec_iterate3(Months,Rabbits,TTL)->
+	
+  % Breed
+  NewRabbits = 
+    lists:foldl( fun ( A, Acc ) ->
+	  { Key, Vals } = A,
 	  if
-	    A > TTL -> Acc;
-	    A == 0 -> Acc;
-	    true -> Acc ++ [A,TTL]
+        Key < TTL ->
+		  Acc + Vals;
+	    true -> Acc
 	  end
-      end,[],AgedRabbits),
-  io:format("SR = ~w\n",[SurvivingRabbits]),
-  case Months of
-    1 -> length( AgedRabbits );
-    _ ->
-      rec_iterate(Months-1,TTL,SurvivingRabbits)
-  end.
+	end,0,Rabbits),
+  
+  % Kill
+  ReduceRabbits = 
+    lists:foldl( fun (A ,Acc ) ->
+	  { Key, Vals } = A,
+	  if
+	    (Key -1 ) == 0 -> Acc;
+		true -> [{Key-1,Vals}|Acc]
+	  end
+	end,[],Rabbits),
+  
+  % Recurse 
+  rec_iterate3(Months-1,lists:merge([{TTL,NewRabbits}],ReduceRabbits),TTL).
