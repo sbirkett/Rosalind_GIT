@@ -1,6 +1,6 @@
 -module(kmers).
 
--export([start/1]).
+-export([start/1,make_permutations/2,make_weighted_chars/1]).
 
 -include_lib("nodes.hrl").
 
