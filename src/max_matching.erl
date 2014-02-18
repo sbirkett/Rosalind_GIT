@@ -25,20 +25,23 @@ solve(File)->
 	CCount = dict:fetch(67, CharDict),
 	GCount = dict:fetch(71, CharDict),
 	UCount = dict:fetch(85, CharDict),
-	io:format("~w\n",[[ACount,CCount,GCount,UCount]]),
+	io:format("~w\n",[[ACount,UCount,CCount,GCount]]),
 	X = 
-		case ( ACount > CCount ) of
-			true -> factorial(ACount) / factorial(ACount - CCount);
-			false -> factorial(CCount) / factorial(CCount - ACount)
+		case ( ACount > UCount ) of
+			true -> lists:foldl( fun (A, Acc) ->
+										 Acc * A end , 1, lists:seq(ACount-UCount+1,ACount));
+			false -> lists:foldl( fun (A , Acc) ->
+										   Acc * A end, 1, lists:seq(UCount-ACount+1,UCount))
 		end,
 	Y =
-		case ( GCount > UCount ) of 
-			true -> factorial(GCount) / factorial(GCount - UCount);
-			false -> factorial(UCount) / factorial(UCount - GCount)
+		case ( GCount > CCount ) of 
+			true ->  lists:foldl( fun (A , Acc )->
+										   Acc * A end , 1, lists:seq(GCount-CCount+1,GCount));
+			false -> lists:foldl( fun ( A, Acc) ->
+										   Acc * A end , 1, lists:seq(CCount -GCount+1,CCount))
 		end,
 	
-	io:format("~f\n",[X * Y]).
-
+    X * Y.
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
