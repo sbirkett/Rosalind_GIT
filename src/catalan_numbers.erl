@@ -22,7 +22,6 @@ solve(File)->
 	    nxt = 0} ] end
 	,[],Seq),
   outside_check(Nodes).
-  %check_complete(Nodes).
 
 % Make base start
 % All Graphs made from connecting edges that connect over an
@@ -61,6 +60,7 @@ outside_check(Nodes)->
 	    Acc
 	end end,[],NodeDict),
 
+  %io:format("~w\n~w\n",[EvenToOdd,OddToEven]),
   case {check_complete(EvenToOdd),check_complete(OddToEven)} of
     {true,true} -> 2;
     {true,false} ->1;
@@ -73,6 +73,7 @@ outside_check(Nodes)->
 check_complete(Nodes)->
   % All Nodes have connections
   EmptyNodes = lists:filter( fun (A) -> A#node.nxt == 0 end, Nodes),
+  %io:format("EmptyNodes = ~w\n",[EmptyNodes]),
   case length(EmptyNodes) of 
     0 ->
       check_edges(Nodes,[]);
@@ -84,27 +85,94 @@ check_complete(Nodes)->
 check_edges([],_)->true;
 check_edges([Node|Nodes],[])-> check_edges(Nodes,[Node]);
 check_edges([Node|Nodes],CheckedNodes)->
+  %io:format("Node = ~w\n",[Node]),
+  %io:format("CheckedNodes = ~w\n",[CheckedNodes]),
   Conflicts = lists:filter( fun(A) -> 
-	( (A#node.ind < Node#node.ind)
-	  and
-	  (A#node.nxt < Node#node.nxt)
-	)
-	or
-	( (A#node.ind > Node#node.ind)
-	  and
-	  (A#node.nxt > Node#node.ind)
-	) end, CheckedNodes),
+	( A#node.nxt /= Node#node.ind )
+	and
+	do_valid_checking(A,Node)
+        end, CheckedNodes),
+  %io:format("Conflicts = ~w\n",[Conflicts]),
   case length(Conflicts) of
     0 -> check_edges(Nodes,[Node|CheckedNodes]);
     _ -> false
   end.
 
+do_valid_checking(A,B)->
+  {X,Y} = 
+  	case A#node.ind > B#node.ind of
+	  true -> {B,A};
+	  false -> {A,B}
+	end,
+  
+  catch_one(X,Y) or 
+  catch_two(X,Y) or 
+  catch_three(X,Y) or
+  catch_four(X,Y).
+
+% --- A --- BT --- AT --- B ---
+catch_one(A,B)->
+  case A#node.ind < B#node.ind of
+    false -> false;
+    true ->
+      case A#node.nxt < B#node.ind of
+	false -> false;
+	true ->
+	  case ( A#node.nxt > B#node.nxt ) and ( A#node.ind < B#node.nxt) of
+	    false -> false;
+	   true -> true
+	 end
+     end
+ end. 
+
+% --- AT --- BT --- A --- B ---
+catch_two(A,B)->
+  case A#node.ind < B#node.ind of 
+    false -> false;
+    true ->
+      case (A#node.nxt < A#node.ind) and (B#node.nxt < A#node.ind) of
+	false -> false;
+	true -> 
+	  case (A#node.nxt < B#node.nxt) of
+	    false -> false;
+	    true -> true
+	end
+     end
+  end.
+
+
+% --- BT --- A --- B --- AT ---
+catch_three(A,B)->
+  case A#node.ind < B#node.ind of
+    false -> false;
+    true ->
+      case (A#node.nxt > B#node.ind) and (B#node.nxt < A#node.ind) of
+	false -> false;
+	true -> true
+      end
+  end.
+
+% --- A --- B --- AT --- BT ---
+catch_four(A,B)->
+  case A#node.ind < B#node.ind of 
+    false -> false;
+    true ->
+      case (A#node.nxt > B#node.ind) and ( B#node.nxt > B#node.ind ) of
+	false -> false;
+	true ->
+	  case A#node.nxt < B#node.nxt of
+	    false -> false;
+	    true -> true
+	  end
+      end
+  end.
+
 valid_connection(A,B)->
   case {A,B} of 
     {65,85} -> true;
-    {85,65} -> true;
-    {67,71} -> true;
-    {71,67} -> true;
+    {85,65} -> true; 
+    {67,71} -> true; 
+    {71,67} -> true; 
     {_,_} -> false
   end.
 
