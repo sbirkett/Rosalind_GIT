@@ -27,7 +27,7 @@ solve(File)->
 % All Graphs made from connecting edges that connect over an
 % outer span of 2*(k)
 make_base_set(Nodes)->
-  1.
+  FreeNodes = [ X || X <- Nodes, X#node.nxt == 0 ].
 
 % Construct all the possible sub graphs
 make_valid_sub_graphs(Nodes)->
