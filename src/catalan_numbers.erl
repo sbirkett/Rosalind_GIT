@@ -23,16 +23,23 @@ solve(File)->
 	,[],Seq),
   outside_check(Nodes).
 
-% Make base start
-% All Graphs made from connecting edges that connect over an
-% outer span of 2*(k)
-make_base_set(Nodes)->
-  FreeNodes = [ X || X <- Nodes, X#node.nxt == 0 ].
-
-% Construct all the possible sub graphs
-make_valid_sub_graphs(Nodes)->
-  1.
-
+% Make All Forward Edged Graphs
+% from lowest index free node
+make_all_forward_graphs(Nodes)->
+  First = hd([ X || X <- Nodes, X#node.nxt == 0 ]),
+  NewGraphs = lists:foldl( fun ( A , Acc ) ->
+  		case ( A#node.ind > First#node.ind ) of
+		  true ->
+            case do_valid_checking(A,First) of 
+	          false -> Acc;
+              true -> 
+                [X,Y] = assign_edge(First,A),
+                1
+	         end;
+           false -> Acc
+         end
+         end,[],Nodes).
+	
 % Check outside edges scenario
 % Two possible.
 outside_check(Nodes)->
@@ -73,7 +80,6 @@ outside_check(Nodes)->
 check_complete(Nodes)->
   % All Nodes have connections
   EmptyNodes = lists:filter( fun (A) -> A#node.nxt == 0 end, Nodes),
-  %io:format("EmptyNodes = ~w\n",[EmptyNodes]),
   case length(EmptyNodes) of 
     0 ->
       check_edges(Nodes,[]);
