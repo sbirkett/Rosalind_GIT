@@ -21,24 +21,37 @@ solve(File)->
 	    ind = length(Acc) + 1,
 	    nxt = 0} ] end
 	,[],Seq),
-  outside_check(Nodes).
+  %outside_check(Nodes).
+  All_Graphs = make_graphs(1,length(Nodes),[Nodes]).
+
+make_graphs(Start,Max,Graphs) ->
+  case Start == Max of
+    true -> Graphs;
+    false ->
+      make_graphs(Start+1, Max,
+	lists:foldl( fun (A,Acc) ->
+	      case check_complete(A) of
+		false -> lists:merge(Acc,make_all_forward_graphs(A));
+		true -> [ A | Acc ]
+	      end
+	  end, [], Graphs))
+  end.
 
 % Make All Forward Edged Graphs
 % from lowest index free node
 make_all_forward_graphs(Nodes)->
   First = hd([ X || X <- Nodes, X#node.nxt == 0 ]),
   NewGraphs = lists:foldl( fun ( A , Acc ) ->
-  		case ( A#node.ind > First#node.ind ) of
-		  true ->
-            case do_valid_checking(A,First) of 
-	          false -> Acc;
+  	case ( A#node.ind > First#node.ind ) of
+	  true ->
+            case valid_connection(A,First) of 
+	      false -> Acc;
               true -> 
-                [X,Y] = assign_edge(First,A),
-                1
-	         end;
-           false -> Acc
-         end
-         end,[],Nodes).
+		[ assign_edge(First,A,Nodes) | Acc ]
+	    end;
+          false -> Acc
+        end
+        end,[],Nodes).
 	
 % Check outside edges scenario
 % Two possible.
@@ -49,7 +62,7 @@ outside_check(Nodes)->
 	  1 -> 
 	    NextNode = get_next_elem(K,NodeDict),
 	    case valid_connection( A#node.value , NextNode#node.value ) of
-	      true -> lists:merge(Acc,assign_edge(A,NextNode));
+	      true -> lists:merge(Acc,assign_single_edge(A,NextNode));
 	      false -> lists:merge(Acc, [A,NextNode])
 	    end;
 	  _ ->
@@ -60,7 +73,7 @@ outside_check(Nodes)->
 	  0 ->
 	    NextNode=  get_next_elem(K,NodeDict),
 	    case valid_connection(A#node.value, NextNode#node.value) of 
-	      true -> lists:merge(Acc,assign_edge(A,NextNode));
+	      true -> lists:merge(Acc,assign_single_edge(A,NextNode));
 	      false -> lists:merge(Acc, [A,NextNode])
 	    end;
 	  _ ->
@@ -188,7 +201,19 @@ get_next_elem(CurrKey,Dict)->
     false -> dict:fetch(CurrKey+1,Dict)
   end.
 
-assign_edge(A,B)->
+assign_edge(X,Y,Nodes)->
+  lists:foldl( fun (A ,Acc)->
+    if
+      A#node.ind == X#node.ind -> 
+	[ #node { value = A#node.value , ind = A#node.ind, nxt = Y#node.ind } | Acc ];
+      A#node.ind == Y#node.ind -> 
+	[ #node { value = A#node.value , ind = A#node.ind, nxt = X#node.ind } | Acc ];
+      true -> 
+	[ A | Acc ] 
+    end
+    end, [], Nodes).
+
+assign_single_edge(A,B)->
   AMod = #node { value = A#node.value, ind = A#node.ind, nxt = B#node.ind },
   BMod = #node { value = B#node.value, ind = B#node.ind, nxt = A#node.ind },
   [AMod,BMod].
