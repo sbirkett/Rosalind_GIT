@@ -1,6 +1,6 @@
 -module(counting_subsets).
 
--export([solve/1]).
+-export([solve/1,binom/2]).
 
 solve(N)->
   do_recurse(N,N,0).
