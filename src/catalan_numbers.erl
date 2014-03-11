@@ -121,12 +121,12 @@ do_valid_checking(A,B)->
   C3 = catch_three(X,Y),
   C4 = catch_four(X,Y),
   if
-	A#node.nxt == 0 -> false;
-	A#node.nxt == B#node.ind -> false;
-	B#node.nxt == 0 -> false;
-	B#node.nxt == A#node.ind -> false;
+    A#node.nxt == 0 -> false;
+    A#node.nxt == B#node.ind -> false;
+    B#node.nxt == 0 -> false;
+    B#node.nxt == A#node.ind -> false;
     C1 -> true;
-	C2 -> true;
+    C2 -> true;
     C3 -> true;
     C4 -> true;
     true -> false
