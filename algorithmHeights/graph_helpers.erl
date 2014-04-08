@@ -12,7 +12,9 @@
    [
 	read_edge_list_file/1,
 	get_degree_array/1,
-	get_double_degree_array/1]).
+	get_double_degree_array/1,
+	graph_as_dict/1
+   ]).
 
 read_edge_list_file(File)->
   process_read_edge_list_file(File).
@@ -43,13 +45,12 @@ get_degree_array(Graph)->
           AIndex < BIndex end,Graph),
 	[ io:format("~w ", [ length( T#node.connections ) ] ) || T <- SortedNodes ].	
 
-%% ====================================================================
-%% Internal functions
-%% ====================================================================
-
 graph_as_dict(Graph)->
 	NodesWithKey = [ { T#node.ident, T } || T <- Graph ],
 	dict:from_list(NodesWithKey).
+%% ====================================================================
+%% Internal functions
+%% ====================================================================
 
 get_degree_array_from_file(File)->
 	Graph = read_edge_list_file(File),
