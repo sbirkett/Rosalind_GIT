@@ -13,11 +13,19 @@
 	read_edge_list_file/1,
 	get_degree_array/1,
 	get_double_degree_array/1,
-	graph_as_dict/1
+	graph_as_dict/1,
+	directed_read_edge_list_file/1
    ]).
 
 read_edge_list_file(File)->
-  process_read_edge_list_file(File).
+  process_read_edge_list_file(
+	File,
+	fun(X,Y,Z) -> make_undirected_unweighted_graph(X,Y,Z) end).
+
+directed_read_edge_list_file(File)->
+  process_read_edge_list_file(
+	File,
+	fun(X,Y,Z) -> make_directed_unweighted_graph(X,Y,Z) end).
 
 get_double_degree_array(Graph)->
 	SortedNodes = 
@@ -52,15 +60,7 @@ graph_as_dict(Graph)->
 %% Internal functions
 %% ====================================================================
 
-get_degree_array_from_file(File)->
-	Graph = read_edge_list_file(File),
-	SortedNodes = 
-      lists:sort(
-	    fun( #node{ident=AIndex},#node{ident=BIndex}) ->
-          AIndex < BIndex end,Graph),
-	[ io:format("~w ", [ length( T#node.connections ) ] ) || T <- SortedNodes ].
-
-process_read_edge_list_file(File)->
+process_read_edge_list_file(File,PostFunc)->
 	
   {ok,Data} = file:read_file(File),
   
@@ -71,10 +71,29 @@ process_read_edge_list_file(File)->
   [NodeCount,EdgeCount] = 
 	  [ element(1,string:to_integer(T)) || T <- string:tokens(hd(Lines)," ")],
   
-  % TODO: make distinction for other graph types
-  make_undirected_unweighted_graph(NodeCount,EdgeCount,Lines).
+  PostFunc(NodeCount,EdgeCount,Lines).
   
-make_undirected_unweighted_graph(NodeCount,EdgeCount,Lines)->
+make_directed_unweighted_graph(NodeCount,_,Lines)->
+  Edge_Dict =
+    lists:foldl(
+	  fun(A,Acc)->
+	    [Key,Value] =
+		  [ element(1,string:to_integer(T)) || T <- string:tokens(A," ") ],
+		dict:append(Key, Value, Acc) end,
+	  dict:new(),
+	  tl(Lines)),
+
+  lists:foldl(
+	fun(A,Acc)->
+	  case dict:find(A,Edge_Dict) of
+	    {ok,Value} ->
+          [#node{ident = A,connections = Value} | Acc ];
+		_ ->
+		  [#node{ident = A,connections = [] } | Acc] end end,
+	[],
+	lists:seq(1,NodeCount)).
+  
+make_undirected_unweighted_graph(NodeCount,_,Lines)->
   Edge_Dict = 
     lists:foldl( 
       fun(A,Acc)->
