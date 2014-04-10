@@ -22,7 +22,6 @@ solve(File)->
   
   io:format("~w\n",[length(Graphs)]).
 
-
 get_connected_sub_graphs(Graph)->
 	
   rec_get_connected_sub_graphs(
@@ -37,15 +36,11 @@ get_connected_sub_graphs(Graph)->
 rec_get_connected_sub_graphs([],_,Outs)->Outs;
 rec_get_connected_sub_graphs(Nodes,NodesDict,Outs)->
 	
-  io:format("rec_get_connect_sub_graphs\n"),
-  % Gather first node
   NodeInQ = hd(Nodes),
-  io:format("nod in q = ~w\n",[NodeInQ]),
-  % Recursively find all the neighbors
+  
   NeighborsInQAsDict = 
-	 % graph_helpers:graph_as_dict( 
 		gather_all_neighbors(
-		  Nodes,NodesDict,dict:new()),
+		  [NodeInQ],NodesDict,dict:new()),
   
   RemainingNodes =
     lists:foldl(
@@ -62,51 +57,24 @@ rec_get_connected_sub_graphs(Nodes,NodesDict,Outs)->
 	RemainingNodes,
 	NodesDict,
 	[ NeighborsInQAsDict | Outs ]).
-  
-  %io:format("RemaningNodes = ~w\n",[RemainingNodes]),
-  
-  %RemainingNodes =
-	%  lists:filter(
-	 % fun(A) -> 1 end , Nodes),
-	    %not lists:member(A,NeighborsInQ) end, Nodes),
-  %io:format("RemaningNodes = ~w\n",[RemainingNodes]),
-  % Add connected group to the outs and call again with neighbors removed
-  %1.
-%  rec_get_connected_sub_graphs(
-	%lists:filter(
-	%  fun(A) ->
-	%    not lists:member(A,NeighborsInQ) end, Nodes),
-	%NodesDict,
-	%[ NeighborsInQ | Outs]).
 
 gather_all_neighbors([],_,OutsDict)-> OutsDict;
-  %[ T || {_,T} <-  dict:to_list(OutsDict) ];
-
 gather_all_neighbors(Nodes,NodesDict,OutsDict)->
-  1.
-%  io:format("gather_all_neighbors\n"),
-%  NodeInQ = hd(Nodes),
-%  io:format("NodeInQ = ~w\n",[NodeInQ]),
-%  Neighbors = 
-%   [ NodeInQ |  [ dict:fetch(T,NodesDict) || T <- NodeInQ#node.connections ] ],
-%  io:format("Neighbors = ~w\n",[Neighbors]),
-%  NewOutsDict =
-%    lists:foldl(
-%	  fun(A,Acc)->
-%	    case dict:is_key(A#node.ident,OutsDict) of
-%		  true -> Acc;
-%		  false ->
- %           dict:append(A#node.ident,A,Acc) 
-	%	end
-	%    end,
-	 %   OutsDict,Neighbors),
-%  io:format("NewOutsDict = ~w\n",[NewOutsDict]),
+	
+  NodeInQ = hd(Nodes),
+
+  NodesAsDict = 
+	  graph_helpers:graph_as_dict(
+		lists:delete(NodeInQ,Nodes)),
   
-%  gather_all_neighbors(
-%    lists:filter(
-	%  fun(A)->
-	 %   not dict:is_key(A#node.ident,NewOutsDict) end,
-	  %Nodes),
-    %NodesDict,
-    %NewOutsDict).
-    
+  Neighbors = 
+    [ dict:fetch(T,NodesDict) 
+		|| 
+      T <- NodeInQ#node.connections, 
+	  not 
+	    ( dict:is_key(T,OutsDict) or dict:is_key(T, NodesAsDict) ) ],
+  
+  gather_all_neighbors(
+    lists:merge(lists:delete(NodeInQ, Nodes),Neighbors),
+    NodesDict,
+	dict:append(NodeInQ#node.ident,NodeInQ,OutsDict)).
