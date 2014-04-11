@@ -10,11 +10,31 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([make_sized_permutations/2]).
+-export([make_sized_permutations/2,make_unique_sized_permutations/2]).
+
+make_unique_sized_permutations(Values,Size)->
+	
+  compile:file("node_stuff.erl"),
+  
+  	Parents = lists:foldl( fun ( A , Acc ) ->
+ 		Acc ++ [node_stuff:regular_node_head(A)]  end, [], Values),
+ 	
+ 	Leafs = make_sized_permutations_rec(Values,Size,1,Parents),
+	
+ 	lists:foldl( fun(A,Acc) -> 
+		PotentialPermutation = node_stuff:read_until_head(A),
+		case 
+			length(PotentialPermutation) == 
+		    sets:size(sets:from_list(PotentialPermutation)) of
+			true ->
+ 				[ node_stuff:read_until_head(A) | Acc ] ;
+			false -> Acc
+		end
+		end, [], Leafs).
 
 make_sized_permutations(Values,Size)->
 	
-	%compile:file(node_stuff),
+	compile:file("node_stuff.erl"),
 	
 	Parents = lists:foldl( fun ( A , Acc ) ->
  		Acc ++ [node_stuff:regular_node_head(A)]  end, [], Values),

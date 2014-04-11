@@ -14,8 +14,12 @@
 	get_degree_array/1,
 	get_double_degree_array/1,
 	graph_as_dict/1,
-	directed_read_edge_list_file/1
+	directed_read_edge_list_file/1,
+    read_multi_edge_list_file/1
    ]).
+
+read_multi_edge_list_file(File)->
+  1.
 
 read_edge_list_file(File)->
   process_read_edge_list_file(
