@@ -15,30 +15,34 @@
 
 solve(File)->
 	
-  compile:file("graph_helpers.erl"),
-  compile:file("../src/permutation_helper.erl"),
-  
+  %compile:file("graph_helpers.erl"),
+  %compile:file("../src/node_stuff.erl",{outdir,"."}),
+  compile:file("../src/permutation_helper.erl",{outdir,"."}),
+  io:format("compiled\n"),
   Graphs = graph_helpers:read_multi_edge_list_file(File),
   
   lists:map(
-	fun(A) ->
-	  io:format("~w ",[check_bipartite(A)]) end,
-	Graphs).
+    fun(A) ->
+      io:format("~w ",[check_bipartite(A)]) end,
+    Graphs).
 
 check_bipartite(Graph)->
 	
-  NodePermutations = generate_node_permutations(Graph),
- 
-  AnyBipartite =
-    lists:any(
-	  fun({A,B}) ->
-	    check_bipartite(A,B) == 1 end,
-	  NodePermutations),
-  
-  case AnyBipartite of
-    true -> 1;
-	false -> -1
-  end.
+  NodePermutations = 
+    generate_node_permutations(
+      graph_helpers:graph_as_dict(Graph)),
+
+  NodePermutations.
+%  AnyBipartite =
+%    lists:any(
+%      fun({A,B}) ->
+%	check_bipartite(A,B) == 1 end,
+%      NodePermutations),
+%  
+%  case AnyBipartite of
+%    true -> 1;
+%    false -> -1
+%  end.
 
 %% ====================================================================
 %% Internal functions
