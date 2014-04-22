@@ -1,6 +1,6 @@
 -module(permutation_helper).
 
--include_lib("/Users/scott/Documents/workspace/Rosalind_GIT/src/nodes.hrl").
+-include_lib("nodes.hrl").
 
 -import(node_stuff,[regular_node/2]).
 -import(node_stuff,[regular_node_head/1]).
@@ -13,24 +13,22 @@
 -export([make_sized_permutations/2,make_unique_sized_permutations/2]).
 
 make_unique_sized_permutations(Values,Size)->
-  io:format("make_u\n"),
-  %compile:file("/Users/scott/Documetns/workspace/Rosalind_GIT/src/node_stuff.erl"),
- 1. 
-%  	Parents = lists:foldl( fun ( A , Acc ) ->
-% 		Acc ++ [node_stuff:regular_node_head(A)]  end, [], Values),
- 	
-% 	Leafs = make_sized_permutations_rec(Values,Size,1,Parents),
 	
-% 	lists:foldl( fun(A,Acc) -> 
-%		PotentialPermutation = node_stuff:read_until_head(A),
-%		case 
-%			length(PotentialPermutation) == 
-%		    sets:size(sets:from_list(PotentialPermutation)) of
-%			true ->
-% 				[ node_stuff:read_until_head(A) | Acc ] ;
-%			false -> Acc
-%		end
-%		end, [], Leafs).
+  Parents = lists:foldl( fun ( A , Acc ) ->
+         Acc ++ [node_stuff:regular_node_head(A)]  end, [], Values),
+ 
+  Leafs = make_sized_permutations_rec(Values,Size,1,Parents),
+
+  lists:foldl( fun(A,Acc) -> 
+        PotentialPermutation = node_stuff:read_until_head(A),
+        case 
+                length(PotentialPermutation) == 
+            sets:size(sets:from_list(PotentialPermutation)) of
+                true ->
+                         [ node_stuff:read_until_head(A) | Acc ] ;
+                false -> Acc
+        end
+        end, [], Leafs).
 
 make_sized_permutations(Values,Size)->
 	

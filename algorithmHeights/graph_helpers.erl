@@ -24,24 +24,33 @@ read_multi_edge_list_file(File)->
   
   D = re:replace(Data,"$<<","",[global,{return,list}]),
 
-  DSegments = re:split(D,"\n\n"),
+  DSegments = re:split(D,"\r\n",[{return,list}]),
 
-  StringSegments =
+  DSubSegments =
     lists:foldl(
-      fun(A,Acc)->
-        Acc ++ [binary_to_list(A)] end,
+	  fun(A,Acc)->
+	    LastKey = lists:last(orddict:fetch_keys(Acc)),
+	    case A == [] of
+		  true ->
+			orddict:append(LastKey+1,[],Acc);
+		  false ->
+			orddict:append_list(LastKey, [A], Acc)
+		end
+	  end,
+	  orddict:from_list([{0,[]}]),
+	  lists:sublist(DSegments, 3, length(DSegments))),
+   
+   Graphs = 
+    orddict:fold(
+      fun(_,Value,Acc)->
+	    ModValue = lists:filter(fun(A) -> A /= [] end,Value),
+        % Get Node Count
+        NodeCount = element(1,string:to_integer([hd(hd(ModValue))])),
+		
+		Acc ++ [make_undirected_unweighted_graph(NodeCount,0,ModValue)]
+       end,
       [],
-      tl(DSegments)), % ignore the first line, num of graphs not important
-
-  lists:foldl(
-    fun(A,Acc)->
-      Lines = string:tokens(A,"\n"),
-      [NodeCount,EdgeCount] =
-	      [ element(1,string:to_integer(T)) || T <- string:tokens(hd(Lines)," ")],
-      Acc ++ [make_directed_unweighted_graph(NodeCount,EdgeCount,Lines)] 
-    end,
-    [],
-    StringSegments).
+      DSubSegments).
 
 read_edge_list_file(File)->
   process_read_edge_list_file(

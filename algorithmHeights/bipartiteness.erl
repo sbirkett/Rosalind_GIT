@@ -15,12 +15,18 @@
 
 solve(File)->
 	
-  %compile:file("graph_helpers.erl"),
-  %compile:file("../src/node_stuff.erl",{outdir,"."}),
-  compile:file("../src/permutation_helper.erl",{outdir,"."}),
-  io:format("compiled\n"),
-  Graphs = graph_helpers:read_multi_edge_list_file(File),
+  %% cleanup
+  file:delete("graph_helpers.beam"),
+  file:delete("node_stuff.beam"),
+  file:delete("permutation_helper.beam"),
   
+  %% compile other modules
+  compile:file("graph_helpers.erl",{outdir,"."}),
+  compile:file("../src/node_stuff.erl",{outdir,"."}),
+  compile:file("../src/permutation_helper.erl",{outdir,"."}),
+  
+  Graphs = graph_helpers:read_multi_edge_list_file(File),
+  io:format("Graphs = ~w\n",[Graphs]),
   lists:map(
     fun(A) ->
       io:format("~w ",[check_bipartite(A)]) end,
@@ -54,7 +60,7 @@ generate_node_permutations(Graph)->
     permutation_helper:make_unique_sized_permutations(
 	  dict:fetch_keys(Graph), 
 	  dict:size(Graph)),
-  
+  io:format("Permutations = ~w\n",[Permutations]),
   lists:foldl(
 	fun(A,Acc)->
       lists:map(
