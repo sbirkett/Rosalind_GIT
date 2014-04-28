@@ -10,12 +10,12 @@
 %% ====================================================================
 -export(
    [
-	read_edge_list_file/1,
-	get_degree_array/1,
-	get_double_degree_array/1,
-	graph_as_dict/1,
-	directed_read_edge_list_file/1,
-    read_multi_edge_list_file/1
+     read_edge_list_file/1,
+     get_degree_array/1,
+     get_double_degree_array/1,
+     graph_as_dict/1,
+     directed_read_edge_list_file/1,
+     read_multi_edge_list_file/1
    ]).
 
 read_multi_edge_list_file(File)->
@@ -24,7 +24,13 @@ read_multi_edge_list_file(File)->
   
   D = re:replace(Data,"$<<","",[global,{return,list}]),
 
-  DSegments = re:split(D,"\r\n",[{return,list}]),
+  DSegments =
+    case os:type() of
+      {unix,_} ->
+        re:split(D,"\n",[{return,list}]);
+      _ ->
+	re:split(D,"\r\n",[{return,list}])
+  end,
 
   DSubSegments =
     lists:foldl(
@@ -35,19 +41,23 @@ read_multi_edge_list_file(File)->
 			orddict:append(LastKey+1,[],Acc);
 		  false ->
 			orddict:append_list(LastKey, [A], Acc)
-		end
+       	    end
 	  end,
 	  orddict:from_list([{0,[]}]),
 	  lists:sublist(DSegments, 3, length(DSegments))),
-   
-   Graphs = 
+
+  Graphs = 
     orddict:fold(
       fun(_,Value,Acc)->
-	    ModValue = lists:filter(fun(A) -> A /= [] end,Value),
-        % Get Node Count
-        NodeCount = element(1,string:to_integer([hd(hd(ModValue))])),
-		
-		Acc ++ [make_undirected_unweighted_graph(NodeCount,0,ModValue)]
+	  ModValue = lists:filter(fun(A) -> A /= [] end,Value),
+	  case ModValue == [] of
+	    false ->
+	      % Get Node Count
+	      NodeCount = element(1,string:to_integer([hd(hd(ModValue))])),
+	      Acc ++ [make_undirected_unweighted_graph(NodeCount,0,ModValue)];
+	    true ->
+	      Acc
+	  end
        end,
       [],
       DSubSegments).

@@ -26,49 +26,117 @@ solve(File)->
   compile:file("../src/permutation_helper.erl",{outdir,"."}),
   
   Graphs = graph_helpers:read_multi_edge_list_file(File),
-  io:format("Graphs = ~w\n",[Graphs]),
-  lists:map(
-    fun(A) ->
-      io:format("~w ",[check_bipartite(A)]) end,
-    Graphs).
+  %io:format("SEcondGraph = ~w\n",[tl(Graphs)]).
+  check_bipartite(lists:last(Graphs)).
+  %io:format("Graphs = ~w\n",[Graphs]),
+%  lists:map(
+%    fun(A) ->
+%      case check_bipartite(A) of
+%	true->io:format("1 ");
+%	false->io:format("-1 ")
+%      end
+%    end,
+%    Graphs).
 
 check_bipartite(Graph)->
-	
+  
+  GraphAsDict = graph_helpers:graph_as_dict(Graph),  
+
   NodePermutations = 
-    generate_node_permutations(
-      graph_helpers:graph_as_dict(Graph)),
+    generate_node_permutations(GraphAsDict),
 
-  NodePermutations.
-%  AnyBipartite =
-%    lists:any(
-%      fun({A,B}) ->
-%	check_bipartite(A,B) == 1 end,
-%      NodePermutations),
-%  
-%  case AnyBipartite of
-%    true -> 1;
-%    false -> -1
-%  end.
-
+  check_bipartite_rec(dict:to_list(NodePermutations),GraphAsDict).
+  
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
 
+check_bipartite_rec([],_)->false;
+check_bipartite_rec([{A,B}|NodePermutations],GraphDict)->
+  case check_bipartite_sections(A,hd(B),GraphDict) of
+    true -> true;
+    false -> check_bipartite_rec(NodePermutations,GraphDict)
+  end.
+
 generate_node_permutations(Graph)->
-	
+
   Permutations = 
     permutation_helper:make_unique_sized_permutations(
-	  dict:fetch_keys(Graph), 
+	  lists:seq(1,dict:size(Graph)),
 	  dict:size(Graph)),
-  io:format("Permutations = ~w\n",[Permutations]),
+
+  KeyValueTuples = 
+    lists:foldl(
+      fun(A,Acc) ->
+        lists:merge(Acc,A)
+      end,
+      [],
+      [ dict:to_list(make_key_value_dicts(T)) || T <- Permutations ]),
+
   lists:foldl(
-	fun(A,Acc)->
-      lists:map(
-		fun(B)->
-		  [First,Second] = lists:split(B,A),
-		  dict:append_list(First,Second,Acc) end,
-		lists:seq(1,length(A)-1)) end,
-	[],Permutations).
-			
-check_bipartite(GraphA,GraphB)->
-  1.
+    fun({AKey,AValue},Acc) ->
+      dict:store(AKey,AValue,Acc)
+    end,
+    dict:new(),
+    KeyValueTuples).
+
+make_key_value_dicts(Permutation)->
+  lists:foldl(
+    fun(A,Acc)->
+      {ListA,ListB} = lists:split(A,Permutation),
+      SortedA = lists:sort(ListA),
+      dict:append(SortedA,ListB,Acc)
+    end,
+    dict:new(),
+    lists:seq(1,length(Permutation)-1)).
+
+check_bipartite_sections(AGraphKeys,BGraphKeys,GraphDict)->
+
+  %io:format("check_bipartite_sections\n"),
+  %io:format("AGraphKeys = ~w\n",[AGraphKeys]),
+  %io:format("BGraphKeys = ~w\n",[BGraphKeys]),
+
+  AGraph =
+    dict:filter(
+      fun(Key,_) ->
+        lists:member(Key,AGraphKeys) end,
+      GraphDict),
+
+  BGraph =
+    dict:filter(
+      fun(Key,_) ->
+	lists:member(Key,BGraphKeys) end,
+      GraphDict),
+    %io:format("Checking A Section\n"),
+ 
+    %io:format("AGraph = ~w\n",[dict:to_list(AGraph)]),
+    %io:format("BGraph = ~w\n",[dict:to_list(BGraph)]),
+  
+  ASection = 
+    check_unique_section(
+      [ element(2,T) || T <- dict:to_list(AGraph) ],
+      AGraph),
+    %io:format("Checking B Section\n"),
+  BSection = 
+    check_unique_section(
+      [ element(2,T) || T <- dict:to_list(BGraph) ],
+      BGraph),
+  
+  ASection and BSection.
+       
+check_unique_section([],_)-> true;
+check_unique_section(Graph,GraphDict)->
+  NodeInQ = hd(Graph),
+  %io:format("NodeInQ = ~w\n",[NodeInQ]),
+  %io:format("GraphDict = ~w\n",[dict:to_list(GraphDict)]),
+  case lists:any(
+      fun(A)->
+        dict:is_key(A,GraphDict) end,
+      NodeInQ#node.connections) of
+    false ->
+      %io:format("Was false\n"), 
+      check_unique_section(tl(Graph),GraphDict);
+    true -> 
+      %io:format("Was TRUE\n"),
+      false
+  end.
